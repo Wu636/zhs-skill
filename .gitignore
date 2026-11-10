@@ -1,0 +1,23 @@
+# Credentials and client-specific configuration
+.env
+.env.*
+!.env.example
+**/config/config.json
+**/*credentials*
+**/*cookie*.json
+**/auth.json
+
+# Business data and generated artifacts
+**/runs/
+**/tmp/
+**/backups/
+**/node_modules/
+**/__pycache__/
+*.pyc
+.DS_Store
+*.log
+*.zip
+*.pdf
+*.docx
+*.xlsx
+*.pptx

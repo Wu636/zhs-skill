@@ -1,0 +1,32 @@
+{
+  "appBaseUrl": "http://localhost:3000",
+  "appRoot": "",
+  "training": {
+    "type": "pro"
+  },
+  "llm": {
+    "apiUrl": "",
+    "apiKey": "",
+    "model": "gpt-5.6-sol"
+  },
+  "polymas": {
+    "cookie": "",
+    "authorization": "",
+    "courseId": "",
+    "libraryId": "",
+    "userNid": "",
+    "apiBaseUrl": "https://cloudapi.polymas.com",
+    "uiBaseUrl": "https://hike-teaching-center.polymas.com"
+  },
+  "inject": {
+    "mode": "fresh",
+    "injectCoverImage": true,
+    "injectBackgroundImage": true,
+    "digitalHumanAvatarMode": "existing",
+    "imageProviderMode": "openai",
+    "imageModel": "gpt-image-2",
+    "coverStylePrompt": "",
+    "backgroundStylePrompt": "",
+    "imageProviderPriority": "openai,cloudapi"
+  }
+}

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-11 — 新增教学专家 Skill 生成器
+
+- 纳入 `educational-expert-skill-builder`：从教师需求生成教学专家指令、三段式介绍、验收案例与标准 ZIP 包。
+- 与训练/批阅技能同置于 `skills/`，通过 `~/.agents/skills` 软链共享；该技能无兄弟目录依赖。
+
 ## 2026-11-10 — Initial version-controlled snapshot
 
 - 纳入三个主技能与三个批阅依赖子技能。

@@ -12,10 +12,11 @@
 | [assignment-grading-skill-builder](skills/assignment-grading-skill-builder/SKILL.md) | 从课程要求与教师样本构建批阅技能包 |
 | [polymas-skill-batch-upload](skills/polymas-skill-batch-upload/SKILL.md) | 技能ZIP预检、限并发上传、定稿与课程绑定 |
 | [polymas-grading-agent-create](skills/polymas-grading-agent-create/SKILL.md) | 批阅智能体限并发创建、回查与获准上线 |
+| [educational-expert-skill-builder](skills/educational-expert-skill-builder/SKILL.md) | 教师需求转教学专家 Skill、三段式介绍与标准 ZIP 包 |
 
 ## 范围和重要依赖
 
-本仓库仅包含六个技能的说明、脚本、参考文档与测试，**不包含 Agent_Evaluation 应用源码**。
+本仓库仅包含七个技能的说明、脚本、参考文档与测试，**不包含 Agent_Evaluation 应用源码**。
 
 训练技能依赖另外部署的兼容 `Agent_Evaluation/frontend`，包括现有解析器、生成/注入/测试接口，以及性能优化新增的图片准备、结构化评分和增量更新实现。只克隆本仓库不能单独启动训练服务，也不会自动升级已有服务。通过本端配置的 `appRoot` 或环境变量 `TRAINING_APP_ROOT` 指向兼容应用。
 
@@ -23,7 +24,7 @@
 
 ## 安装与配置
 
-技能共享布局约定为 `~/.agents/skills/<skill-name>`；六个目录须保持同级，部分脚本依赖兄弟目录。可将本仓库 `skills/` 中的对应目录安装或链接到该位置，并在当前宿主注册技能。
+技能共享布局约定为 `~/.agents/skills/<skill-name>`；训练与批阅六个目录须保持同级，部分脚本依赖兄弟目录（`educational-expert-skill-builder` 独立，无兄弟依赖）。可将本仓库 `skills/` 中的对应目录安装或链接到该位置，并在当前宿主注册技能。
 
 **已有同名技能时先备份并比较，不直接覆盖或删除。** 此仓库不自动修改当前安装。运行配置、登录态和业务产物必须保留在本端/独立项目目录，不放进源码仓库。训练配置从 [空白示例](skills/training-config-generate-inject/config/config.example.json) 创建，真实配置不要提交。
 

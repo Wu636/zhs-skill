@@ -126,6 +126,153 @@ function sameVocabulary(parsed, items) {
   });
 }
 
+const JUMP_DEFAULT = "接下来我们将进入下一阶段";
+const END_DEFAULT = "本次实训到此结束";
+
+function charCount(text) {
+  return Array.from(String(text)).length;
+}
+
+function stageLabel(title) {
+  return String(title || "")
+    .replace(/^###\s*/, "")
+    .replace(/^阶段[0-9一二三四五六七八九十]+[:：]\s*/, "")
+    .trim();
+}
+
+function stageBlocks(markdown) {
+  const text = String(markdown || "");
+  const marks = Array.from(text.matchAll(/^### 阶段[0-9一二三四五六七八九十]+[:：][^\n]*$/gm));
+  return marks.map((mark, index) => ({
+    start: mark.index,
+    end: index + 1 < marks.length ? marks[index + 1].index : text.length,
+    title: mark[0].trim(),
+  }));
+}
+
+function promptFenceRange(block) {
+  const promptIdx = block.indexOf("**提示词**");
+  if (promptIdx < 0) return null;
+  const open = block.indexOf("```", promptIdx);
+  if (open < 0) return null;
+  const contentStart = block.indexOf("\n", open);
+  if (contentStart < 0) return null;
+  const close = block.indexOf("\n```", contentStart);
+  if (close < 0) return null;
+  return { contentStart: contentStart + 1, contentEnd: close };
+}
+
+function jumpOutputBlock(phrase) {
+  const n = charCount(phrase);
+  const unit = /^[\u4e00-\u9fff]+$/.test(phrase) ? "汉字" : "字符";
+  return [
+    "# 跳转输出（最高优先级，覆盖以上所有要求）",
+    "",
+    "- 跳转词是平台识别的控制信号：平台按整条消息精确匹配，多一个字、一个标点、一个换行都不会跳转。",
+    "",
+    "- 未满足全部过关条件时，严禁输出跳转词。",
+    "",
+    `- 一旦判定过关，不要再说“这一项已经说清”之类的确认语，不要补充说明，也不要再提新问题，本条消息只能是“${phrase}”这 ${n} 个${unit}，前后不得有空格、标点、换行或其他任何字符。`,
+    "",
+    "- 学生刚回答完最后一处待核事项时，立即判断是否过关；过关就直接只发跳转词，不要再追加确认问题。",
+    "",
+    "- 严禁把确认语、过渡语与跳转词放在同一条消息里。以下写法平台都识别不到，全部禁止：",
+    "",
+    `  - 这一项已经说清。${phrase}`,
+    "",
+    `  - 好的，${phrase}。`,
+    "",
+    `- 发送前自检：本条消息去掉首尾空白后必须恰好 ${n} 个字符，且逐字等于“${phrase}”；多出任何字符就删到只剩跳转词再发送。`,
+  ].join("\n");
+}
+
+function endOutputBlock(phrase) {
+  const n = charCount(phrase);
+  const unit = /^[\u4e00-\u9fff]+$/.test(phrase) ? "汉字" : "字符";
+  return [
+    "# 结束输出（最高优先级，覆盖以上所有要求）",
+    "",
+    "- 结束语是平台识别的控制信号：平台按整条消息精确匹配，多一个字、一个标点、一个换行都不会结束。",
+    "",
+    "- 阶段过关条件未全部满足时，严禁输出结束语。",
+    "",
+    `- 需要结束时，本条消息只能是“${phrase}”这 ${n} 个${unit}，前后不得有空格、标点、换行或其他任何字符。`,
+    "",
+    "- 最后的点评、致谢、总结必须放在上一条消息里说完；严禁与结束语放在同一条消息里。以下写法平台都识别不到，全部禁止：",
+    "",
+    `  - ${phrase}。`,
+    "",
+    `  - 以上是本次实训的全部内容，${phrase}`,
+    "",
+    `- 发送前自检：本条消息去掉首尾空白后必须恰好 ${n} 个字符，且逐字等于“${phrase}”；多出任何字符就删到只剩结束语再发送。`,
+  ].join("\n");
+}
+
+/**
+ * Linear ability/oral scripts: make the platform-matched jump/end word a
+ * standalone control message. Graph scripts and custom end phrases are left
+ * for manual review instead of guessing their keywords.
+ */
+export function ensureJumpOutputBlocks(markdown) {
+  const text = String(markdown || "");
+  const changes = [];
+  const pending = [];
+  if (/##\s*🔀\s*非线性跳转关系/.test(text) || /flowType\s*[:：]\s*["“]?graph/.test(text)) {
+    return { text, changes, pending };
+  }
+  const blocks = stageBlocks(text);
+  if (blocks.length === 0) return { text, changes, pending };
+  const edits = [];
+  blocks.forEach((meta, index) => {
+    const isLast = index === blocks.length - 1;
+    const block = text.slice(meta.start, meta.end);
+    const range = promptFenceRange(block);
+    if (!range) return;
+    const content = block.slice(range.contentStart, range.contentEnd);
+    const marker = isLast ? /#\s*结束输出/ : /#\s*跳转输出/;
+    if (marker.test(content)) return;
+    const flowMatch = block.match(/\*\*flowCondition\*\*\s*[:：]\s*["“'`]?([^"”'`\n]+)/);
+    const flowCondition = (flowMatch?.[1] || "").trim();
+    let phrase = isLast ? END_DEFAULT : JUMP_DEFAULT;
+    if (flowCondition && flowCondition !== "TASK_COMPLETE") phrase = flowCondition;
+    if (flowCondition === "TASK_COMPLETE" && !isLast) {
+      pending.push(`${stageLabel(meta.title)} 使用 TASK_COMPLETE 作为非末阶段跳转词，未自动补跳转约束，请人工确认`);
+      return;
+    }
+    if (isLast) {
+      const declaresEnd =
+        flowCondition === END_DEFAULT || content.includes(END_DEFAULT);
+      if (!declaresEnd) {
+        pending.push(`${stageLabel(meta.title)} 未写明独立结束语，未自动补结束约束，请人工确认`);
+        return;
+      }
+      phrase = END_DEFAULT;
+    } else if (!flowCondition && !content.includes(JUMP_DEFAULT)) {
+      pending.push(`${stageLabel(meta.title)} 未找到跳转词，未自动补跳转约束，请人工确认`);
+      return;
+    }
+    const section = isLast ? endOutputBlock(phrase) : jumpOutputBlock(phrase);
+    const head = content.replace(/\s+$/, "");
+    const inserted = `${head}\n\n${section}\n`;
+    edits.push({
+      start: meta.start + range.contentStart,
+      end: meta.start + range.contentEnd,
+      text: inserted,
+      label: stageLabel(meta.title),
+      kind: isLast ? "结束输出" : "跳转输出",
+    });
+  });
+  let result = text;
+  edits
+    .slice()
+    .sort((a, b) => b.start - a.start)
+    .forEach((edit) => {
+      result = result.slice(0, edit.start) + edit.text + result.slice(edit.end);
+      changes.push(`阶段「${edit.label}」提示词已补${edit.kind}独立性约束`);
+    });
+  return { text: result, changes, pending };
+}
+
 /** Mechanical repairs for ability/oral scripts; semantics stay untouched. */
 export function normalizeBasicMarkdown(markdown, { type = "ability" } = {}) {
   const changes = [];
@@ -223,8 +370,12 @@ export function normalizeBasicMarkdown(markdown, { type = "ability" } = {}) {
     pending.push("未识别到任何有效重点词汇；请按阶段补充后重跑 validate");
   }
 
+  const jump = ensureJumpOutputBlocks(lines.join("\n"));
+  changes.push(...jump.changes);
+  pending.push(...jump.pending);
+
   return {
-    text: lines.join("\n"),
+    text: jump.text,
     changes,
     pending,
     stats: { vocabulary: vocabularyCount },

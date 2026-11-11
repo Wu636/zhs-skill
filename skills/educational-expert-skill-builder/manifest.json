@@ -1,0 +1,32 @@
+{
+  "name": "educational-expert-skill-builder",
+  "display_name": "教学专家 Skill 生成器",
+  "version": "1.0.0",
+  "language": "zh-CN",
+  "entrypoint": "SKILL.md",
+  "expert_custom": "EXPERT_CUSTOM.md",
+  "audience": "教师与教学资源设计者",
+  "capabilities": [
+    "提取教师需求并生成教学专家运行指令",
+    "生成使用场景、核心功能和输出与边界三段式描述",
+    "编写输出模板和可复制的验收案例",
+    "新建或更新带根目录的标准 Skill ZIP 包"
+  ],
+  "resources": {
+    "references": [
+      "references/requirement-to-workflow.md",
+      "references/package_spec.md"
+    ],
+    "templates": [
+      "templates/expert_requirements.md",
+      "templates/expert_profile.md",
+      "templates/expert_package.md"
+    ],
+    "examples": ["examples/test_cases.md"],
+    "scripts": ["scripts/pack_skill.py"]
+  },
+  "limitations": [
+    "平台连接、账号操作和正式发布取决于实际工具与权限",
+    "归档工具检查包结构和文件清单，行为验收需按案例实际运行"
+  ]
+}

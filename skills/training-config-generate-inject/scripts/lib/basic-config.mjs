@@ -175,6 +175,19 @@ export function validateBasicConfig(appRoot, { script, rubric = "", type = "abil
     if (!String(step.trainerName || "").trim()) {
       pushWarning(`阶段「${label}」缺少智能体名称`);
     }
+    const prompt = String(step.llmPrompt || "");
+    if (prompt) {
+      const isLast = index === steps.length - 1;
+      const marker = isLast
+        ? /#\s*结束输出/
+        : /#\s*跳转输出/;
+      if (!marker.test(prompt)) {
+        pushWarning(
+          `阶段「${label}」提示词缺少独立${isLast ? "结束" : "跳转"}输出约束：` +
+          `${isLast ? "结束语" : "跳转词"}必须单独成条、逐字匹配，混发确认语会导致平台识别不到`,
+        );
+      }
+    }
     if (type === "oral") {
       if (step.keyVocabularyError) {
         pushError(`阶段「${label}」重点词汇格式错误: ${step.keyVocabularyError}`);

@@ -1268,6 +1268,7 @@ async function commandInject(config, flags) {
           authorization: rawAuthorization(cookie, config.polymas.authorization),
           cookie,
           userNid: config.polymas.userNid || undefined,
+          apiOrigin: config.polymas.apiBaseUrl || undefined,
           trainSubType: type,
         },
         llmSettings:

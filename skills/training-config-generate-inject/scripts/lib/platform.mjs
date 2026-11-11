@@ -202,7 +202,8 @@ export async function uploadImage(config, filePath) {
     Cookie: ctx.cookie,
     "User-Agent": USER_AGENT,
   };
-  if (ctx.authorization) headers.Authorization = ctx.authorization;
+  const uploadAuthorization = rawToken(ctx.cookie, config.polymas.authorization);
+  if (uploadAuthorization) headers.Authorization = uploadAuthorization;
 
   const form = new FormData();
   form.append("identifyCode", crypto.randomUUID());
